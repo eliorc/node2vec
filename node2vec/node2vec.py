@@ -1,6 +1,4 @@
 import random
-from ast import literal_eval
-
 import numpy as np
 import gensim
 from tqdm import tqdm
@@ -151,42 +149,3 @@ class Node2Vec:
         :return: A gensim word2vec model
         """
         return gensim.models.Word2Vec(self.walks, size=self.dimensions, **skip_gram_params)
-
-
-# Create a graph
-edgelist = [
-    ('a', 'b'),
-    ('a', 'c'),
-    ('a', 'd'),
-    ('b', 'c'),  # Clique of letters
-    ('b', 'd'),
-    ('c', 'd')
-]
-'''
-edgelist = [
-    (1, 2),
-    (1, 3),
-    (1, 4),
-    (2, 3),  # Clique of numbers
-    (2, 4),
-    (3, 4),
-    (4, 5),
-    (5, 6),
-    (5, 7),
-    (5, 8),
-    (6, 7),  # Clique of letters
-    (6, 8),
-    (7, 8)
-]
-'''
-import networkx as nx
-graph = nx.Graph()
-graph.add_edges_from(edgelist)
-x = Node2Vec(graph, walk_length=30, num_walks=800, sampling_strategy={1:{'walk_length': 2}, 3: {'p': 30}})
-
-'''
-graph = nx.Graph()
-graph.add_edges_from([(1, 3), (2,3), (3,5), (3,4), (4, 5)])
-x = Node2Vec(graph, walk_length=30, num_walks=800, sampling_strategy={1:{'walk_length': 2}, 3: {'p': 30}})
-model = x.fit(window=5)
-'''

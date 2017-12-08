@@ -8,6 +8,12 @@ setup(
     author='Elior Cohen',
     author_email='',
     license='MIT',
-    url='github package source url',
+    url='https://github.com/eliorc/node2vec',
+    install_requires=[
+        'networkx',
+        'gensim',
+        'numpy',
+        'tqdm'
+    ],
     keywords=['machine learning', 'embeddings'],
 )
