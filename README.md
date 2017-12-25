@@ -16,13 +16,19 @@ from node2vec import Node2Vec
 graph = nx.fast_gnp_random_graph(n=100, p=0.5)
 
 # Precompute probabilities and generate walks
-node2vec = Node2Vec(graph, dimensions=64, walk_length=30, num_walks=200) 
+node2vec = Node2Vec(graph, dimensions=64, walk_length=30, num_walks=200, workers=4) 
 
 # Embed
-model = node2vec.fit(window=10, min_count=1, batch_words=4)  # Any keywords acceptable by gensim.Word2Vec can be passed
+model = node2vec.fit(window=10, min_count=1, batch_words=4)  # Any keywords acceptable by gensim.Word2Vec can be passed, `diemnsions` and `workers` are automatically passed (from the Node2Vec constructor)
 
 # Look for most similar nodes
-model.most_similar('2')  # Output node names are always strings
+model.wv.most_similar('2')  # Output node names are always strings
+
+# Save embeddings for later use
+model.wv.save_word2vec_format(EMBEDDING_FILENAME)
+
+# Save model for later use
+model.save(EMBEDDING_MODEL_FILENAME)
 
 ```
 
@@ -35,8 +41,10 @@ model.most_similar('2')  # Output node names are always strings
     5. `p`: Return hyper parameter (default: 1)
     6. `q`: Inout parameter (default: 1)
     7. `weight_key`: On weighted graphs, this is the key for the weight attribute (default: 'weight')
-    8. `sampling_strategy`: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
+    8. `workers`: Number of workers for parallel execution (default: 1)
+    9. `sampling_strategy`: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization`
+    
 - `Node2Vec.fit` method:
     Accepts any key word argument acceptable by gensim.Word2Vec
     
@@ -44,7 +52,8 @@ model.most_similar('2')  # Output node names are always strings
 - Node names in the input graph must be all strings, or all ints
 
 ## TODO
-- Parallel implementation for probability precomputation and walk generation
+- [x] Parallel implementation for walk generation
+- [ ] Parallel implementation for probability precomputation
 
 ## Contributing
 I will probably not be maintaining this package actively, if someone wants to contribute and maintain, please contact me.
