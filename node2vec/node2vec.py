@@ -7,12 +7,13 @@ from tqdm import tqdm
 
 
 def parallel_generate_walks(d_graph, global_walk_length, num_walks, cpu_num, sampling_strategy=None,
-                    num_walks_key=None, walk_length_key=None, neighbors_key=None, probabilities_key=None):
+                            num_walks_key=None, walk_length_key=None, neighbors_key=None, probabilities_key=None,
+                            first_travel_key=None):
     """
     Generates the random walks which will be used as the skip-gram input.
     :return: List of walks. Each walk is a list of nodes.
     """
-    
+
     walks = list()
     with tqdm(total=num_walks) as pbar:
         pbar.set_description('Generating walks (CPU: {})'.format(cpu_num))
@@ -44,11 +45,18 @@ def parallel_generate_walks(d_graph, global_walk_length, num_walks, cpu_num, sam
                 else:
                     walk_length = global_walk_length
 
+                # Perform walk
                 while len(walk) < walk_length:
-                    walk_options = d_graph[walk[-1]][neighbors_key]
+
+                    walk_options = d_graph[walk[-1]].get(neighbors_key, None)
+
+                    # Skip dead end nodes
+                    if not walk_options:
+                        break
 
                     if len(walk) == 1:  # For the first step
-                        walk_to = np.random.choice(walk_options, size=1)[0]
+                        probabilities = d_graph[walk[-1]][first_travel_key]
+                        walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
                     else:
                         probabilities = d_graph[walk[-1]][probabilities_key][walk[-2]]
                         walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
@@ -63,7 +71,7 @@ def parallel_generate_walks(d_graph, global_walk_length, num_walks, cpu_num, sam
 
 
 class Node2Vec:
-
+    FIRST_TRAVEL_KEY = 'first_travel_key'
     PROBABILITIES_KEY = 'probabilities'
     NEIGHBORS_KEY = 'neighbors'
     WEIGHT_KEY = 'weight'
@@ -117,8 +125,13 @@ class Node2Vec:
         Precomputes transition probabilities for each node.
         """
         d_graph = defaultdict(dict)
+        first_travel_done = set()
 
         for source in tqdm(self.graph.nodes(), desc='Computing transition probabilities'):
+
+            # Init probabilities dict for first travel
+            if self.PROBABILITIES_KEY not in d_graph[source]:
+                d_graph[source][self.PROBABILITIES_KEY] = dict()
 
             for current_node in self.graph.neighbors(source):
 
@@ -127,24 +140,28 @@ class Node2Vec:
                     d_graph[current_node][self.PROBABILITIES_KEY] = dict()
 
                 unnormalized_weights = list()
+                first_travel_weights = list()
                 d_neighbors = list()
 
                 # Calculate unnormalized weights
                 for destination in self.graph.neighbors(current_node):
+
                     p = self.sampling_strategy[current_node].get(self.P_KEY,
                                                                  self.p) if current_node in self.sampling_strategy else self.p
                     q = self.sampling_strategy[current_node].get(self.Q_KEY,
                                                                  self.q) if current_node in self.sampling_strategy else self.q
 
                     if destination == source:  # Backwards probability
-                        ss_weight = self.graph[current_node][destination].get(self.weight_key, 1) * 1/p
+                        ss_weight = self.graph[current_node][destination].get(self.weight_key, 1) * 1 / p
                     elif destination in self.graph[source]:  # If the neighbor is connected to the source
                         ss_weight = self.graph[current_node][destination].get(self.weight_key, 1)
                     else:
-                        ss_weight = self.graph[current_node][destination].get(self.weight_key, 1) * 1/q
+                        ss_weight = self.graph[current_node][destination].get(self.weight_key, 1) * 1 / q
 
                     # Assign the unnormalized sampling strategy weight, normalize during random walk
                     unnormalized_weights.append(ss_weight)
+                    if current_node not in first_travel_done:
+                        first_travel_weights.append(self.graph[current_node][destination].get(self.weight_key, 1))
                     d_neighbors.append(destination)
 
                 # Normalize
@@ -152,9 +169,14 @@ class Node2Vec:
                 d_graph[current_node][self.PROBABILITIES_KEY][
                     source] = unnormalized_weights / unnormalized_weights.sum()
 
+                if current_node not in first_travel_done:
+                    unnormalized_weights = np.array(first_travel_weights)
+                    d_graph[current_node][self.FIRST_TRAVEL_KEY] = unnormalized_weights / unnormalized_weights.sum()
+                    first_travel_done.add(current_node)
+
                 # Save neighbors
                 d_graph[current_node][self.NEIGHBORS_KEY] = d_neighbors
-        
+
         return d_graph
 
     def _generate_walks(self):
@@ -176,7 +198,9 @@ class Node2Vec:
                                                                                       self.NUM_WALKS_KEY,
                                                                                       self.WALK_LENGTH_KEY,
                                                                                       self.NEIGHBORS_KEY,
-                                                                                      self.PROBABILITIES_KEY) for idx, num_walks
+                                                                                      self.PROBABILITIES_KEY,
+                                                                                      self.FIRST_TRAVEL_KEY) for
+                                                     idx, num_walks
                                                      in enumerate(num_walks_lists, 1))
 
         walks = flatten(walk_results)
