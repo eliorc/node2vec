@@ -50,6 +50,7 @@ model.save(EMBEDDING_MODEL_FILENAME)
     
 ## Caveats
 - Node names in the input graph must be all strings, or all ints
+- Does not work on Anaconda + Windows
 
 ## TODO
 - [x] Parallel implementation for walk generation
