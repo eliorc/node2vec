@@ -50,7 +50,7 @@ model.save(EMBEDDING_MODEL_FILENAME)
     
 ## Caveats
 - Node names in the input graph must be all strings, or all ints
-- Does not work on Anaconda + Windows
+- Parallel execution not working on Windows (`joblib` known issue). To run non-parallel on Windows pass `workers=1` on the `Node2Vec`'s constructor
 
 ## TODO
 - [x] Parallel implementation for walk generation
