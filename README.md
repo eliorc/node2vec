@@ -1,4 +1,5 @@
-# Node2Vec
+# Node2Vec 
+[![Downloads](http://pepy.tech/badge/node2vec)](http://pepy.tech/project/node2vec)
 
 Python3 implementation of the node2vec algorithm Aditya Grover, Jure Leskovec and Vid Kocijan.
 [node2vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016.](https://snap.stanford.edu/node2vec/)
