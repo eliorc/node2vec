@@ -1,4 +1,5 @@
-# Node2Vec
+# Node2Vec 
+[![Downloads](http://pepy.tech/badge/node2vec)](http://pepy.tech/project/node2vec)
 
 Python3 implementation of the node2vec algorithm Aditya Grover, Jure Leskovec and Vid Kocijan.
 [node2vec: Scalable Feature Learning for Networks. A. Grover, J. Leskovec. ACM SIGKDD International Conference on Knowledge Discovery and Data Mining (KDD), 2016.](https://snap.stanford.edu/node2vec/)
@@ -15,7 +16,7 @@ from node2vec import Node2Vec
 # Create a graph
 graph = nx.fast_gnp_random_graph(n=100, p=0.5)
 
-# Precompute probabilities and generate walks
+# Precompute probabilities and generate walks - **ON WINDOWS ONLY WORKS WITH workers=1**
 node2vec = Node2Vec(graph, dimensions=64, walk_length=30, num_walks=200, workers=4) 
 
 # Embed
@@ -51,7 +52,7 @@ model.save(EMBEDDING_MODEL_FILENAME)
     
 ## Caveats
 - Node names in the input graph must be all strings, or all ints
-- Does not work on Anaconda + Windows
+- Parallel execution not working on Windows (`joblib` known issue). To run non-parallel on Windows pass `workers=1` on the `Node2Vec`'s constructor
 
 ## TODO
 - [x] Parallel implementation for walk generation
