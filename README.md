@@ -44,6 +44,7 @@ model.save(EMBEDDING_MODEL_FILENAME)
     8. `workers`: Number of workers for parallel execution (default: 1)
     9. `sampling_strategy`: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization`
+    10. `quiet`: Boolean controlling the verbosity. (default: False)
     
 - `Node2Vec.fit` method:
     Accepts any key word argument acceptable by gensim.Word2Vec

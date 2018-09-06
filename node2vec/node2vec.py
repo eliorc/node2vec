@@ -8,64 +8,71 @@ from tqdm import tqdm
 
 def parallel_generate_walks(d_graph, global_walk_length, num_walks, cpu_num, sampling_strategy=None,
                             num_walks_key=None, walk_length_key=None, neighbors_key=None, probabilities_key=None,
-                            first_travel_key=None):
+                            first_travel_key=None, quiet=False):
     """
     Generates the random walks which will be used as the skip-gram input.
     :return: List of walks. Each walk is a list of nodes.
     """
 
     walks = list()
-    with tqdm(total=num_walks) as pbar:
-        pbar.set_description('Generating walks (CPU: {})'.format(cpu_num))
 
-        for n_walk in range(num_walks):
 
-            # Update progress bar
+
+    if not quiet:
+        pbar = tqdm(total=num_walks, desc='Generating walks (CPU: {})'.format(cpu_num))
+
+    for n_walk in range(num_walks):
+
+        # Update progress bar
+        if not quiet:
             pbar.update(1)
 
-            # Shuffle the nodes
-            shuffled_nodes = list(d_graph.keys())
-            random.shuffle(shuffled_nodes)
+        # Shuffle the nodes
+        shuffled_nodes = list(d_graph.keys())
+        random.shuffle(shuffled_nodes)
 
-            # Start a random walk from every node
-            for source in shuffled_nodes:
+        # Start a random walk from every node
+        for source in shuffled_nodes:
 
-                # Skip nodes with specific num_walks
-                if source in sampling_strategy and \
-                        num_walks_key in sampling_strategy[source] and \
-                        sampling_strategy[source][num_walks_key] <= n_walk:
-                    continue
+            # Skip nodes with specific num_walks
+            if source in sampling_strategy and \
+                    num_walks_key in sampling_strategy[source] and \
+                    sampling_strategy[source][num_walks_key] <= n_walk:
+                continue
 
-                # Start walk
-                walk = [source]
+            # Start walk
+            walk = [source]
 
-                # Calculate walk length
-                if source in sampling_strategy:
-                    walk_length = sampling_strategy[source].get(walk_length_key, global_walk_length)
+            # Calculate walk length
+            if source in sampling_strategy:
+                walk_length = sampling_strategy[source].get(walk_length_key, global_walk_length)
+            else:
+                walk_length = global_walk_length
+
+            # Perform walk
+            while len(walk) < walk_length:
+
+                walk_options = d_graph[walk[-1]].get(neighbors_key, None)
+
+                # Skip dead end nodes
+                if not walk_options:
+                    break
+
+                if len(walk) == 1:  # For the first step
+                    probabilities = d_graph[walk[-1]][first_travel_key]
+                    walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
                 else:
-                    walk_length = global_walk_length
+                    probabilities = d_graph[walk[-1]][probabilities_key][walk[-2]]
+                    walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
 
-                # Perform walk
-                while len(walk) < walk_length:
+                walk.append(walk_to)
 
-                    walk_options = d_graph[walk[-1]].get(neighbors_key, None)
+            walk = list(map(str, walk))  # Convert all to strings
 
-                    # Skip dead end nodes
-                    if not walk_options:
-                        break
+            walks.append(walk)
 
-                    if len(walk) == 1:  # For the first step
-                        probabilities = d_graph[walk[-1]][first_travel_key]
-                        walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
-                    else:
-                        probabilities = d_graph[walk[-1]][probabilities_key][walk[-2]]
-                        walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
-
-                    walk.append(walk_to)
-
-                walk = list(map(str, walk))  # Convert all to strings
-
-                walks.append(walk)
+    if not quiet:
+        pbar.close()
 
     return walks
 
@@ -81,7 +88,7 @@ class Node2Vec:
     Q_KEY = 'q'
 
     def __init__(self, graph, dimensions=128, walk_length=80, num_walks=10, p=1, q=1, weight_key='weight',
-                 workers=1, sampling_strategy=None):
+                 workers=1, sampling_strategy=None, quiet=False):
         """
         Initiates the Node2Vec object, precomputes walking probabilities and generates the walks.
         :param graph: Input graph
@@ -111,6 +118,7 @@ class Node2Vec:
         self.q = q
         self.weight_key = weight_key
         self.workers = workers
+        self.quiet = quiet
 
         if sampling_strategy is None:
             self.sampling_strategy = {}
@@ -127,7 +135,10 @@ class Node2Vec:
         d_graph = defaultdict(dict)
         first_travel_done = set()
 
-        for source in tqdm(self.graph.nodes(), desc='Computing transition probabilities'):
+        nodes_generator = self.graph.nodes() if self.quiet \
+            else tqdm(self.graph.nodes(), desc='Computing transition probabilities')
+
+        for source in nodes_generator:
 
             # Init probabilities dict for first travel
             if self.PROBABILITIES_KEY not in d_graph[source]:
@@ -199,7 +210,8 @@ class Node2Vec:
                                                                                       self.WALK_LENGTH_KEY,
                                                                                       self.NEIGHBORS_KEY,
                                                                                       self.PROBABILITIES_KEY,
-                                                                                      self.FIRST_TRAVEL_KEY) for
+                                                                                      self.FIRST_TRAVEL_KEY,
+                                                                                      self.quiet) for
                                                      idx, num_walks
                                                      in enumerate(num_walks_lists, 1))
 
