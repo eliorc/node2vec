@@ -6,7 +6,7 @@ Python3 implementation of the node2vec algorithm Aditya Grover, Jure Leskovec an
 
 ## Changes:
 
-New in `0.2.0`:
+New in `0.2.1`:
 
 Added edge embedding functionality. Module `node2vec.edges`.
 
