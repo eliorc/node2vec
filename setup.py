@@ -4,7 +4,7 @@ import node2vec
 setup(
     name='node2vec',
     packages=['node2vec'],
-    version=node2vec.__version__,
+    version='0.2.0',
     description='Implementation of the node2vec algorithm.',
     author='Elior Cohen',
     author_email='elior.cohen.p@gmail.com',
