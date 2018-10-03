@@ -1,10 +1,9 @@
 from distutils.core import setup
-import node2vec
 
 setup(
     name='node2vec',
     packages=['node2vec'],
-    version='0.2.1',
+    version='0.2.2',
     description='Implementation of the node2vec algorithm.',
     author='Elior Cohen',
     author_email='elior.cohen.p@gmail.com',
