@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
-import gensim
-from joblib import Parallel, delayed
+import gensim, os, shutil, tempfile
+from joblib import Parallel, delayed, load, dump
 from tqdm import tqdm
 from .parallel import parallel_generate_walks
 
@@ -17,7 +17,7 @@ class Node2Vec:
     Q_KEY = 'q'
 
     def __init__(self, graph, dimensions=128, walk_length=80, num_walks=10, p=1, q=1, weight_key='weight',
-                 workers=1, sampling_strategy=None, quiet=False):
+                 workers=1, sampling_strategy=None, quiet=False, tmp_dir=""):
         """
         Initiates the Node2Vec object, precomputes walking probabilities and generates the walks.
         :param graph: Input graph
@@ -38,6 +38,8 @@ class Node2Vec:
         :type workers: int
         :param sampling_strategy: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization
+        :param tmp_dir: directory with enough space to hold the temp_d_graph
+        :type tmp_dir: str
         """
         self.graph = graph
         self.dimensions = dimensions
@@ -54,14 +56,24 @@ class Node2Vec:
         else:
             self.sampling_strategy = sampling_strategy
 
-        self.d_graph = self._precompute_probabilities()
+        self.d_graph = defaultdict(dict)
+        if tmp_dir != "":
+            assert os.path.isdir(tmp_dir), "tmp_dir does not exists"
+            self.temp_folder = tempfile.mkdtemp(dir=tmp_dir)
+            filename = os.path.join(self.temp_folder, "d_graph.json")
+            if os.path.exists(filename): os.unlink(filename)
+            dump(self.d_graph, filename)
+            self.d_graph = load(filename, mmap_mode="r+")
+            print("Memory map of d_graph: {}".format(filename))
+
+        self._precompute_probabilities()
         self.walks = self._generate_walks()
 
     def _precompute_probabilities(self):
         """
         Precomputes transition probabilities for each node.
         """
-        d_graph = defaultdict(dict)
+        d_graph = self.d_graph
         first_travel_done = set()
 
         nodes_generator = self.graph.nodes() if self.quiet \
@@ -117,7 +129,6 @@ class Node2Vec:
                 # Save neighbors
                 d_graph[current_node][self.NEIGHBORS_KEY] = d_neighbors
 
-        return d_graph
 
     def _generate_walks(self):
         """
@@ -163,3 +174,10 @@ class Node2Vec:
             skip_gram_params['size'] = self.dimensions
 
         return gensim.models.Word2Vec(self.walks, **skip_gram_params)
+
+    def __del__(self):
+        if "temp_folder" in self.__dict__:
+            try:
+                shutil.rmtree(self.temp_folder)
+            except OSError:
+                print("Unable to clean the temporary folder!!!")
