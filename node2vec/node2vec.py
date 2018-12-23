@@ -1,10 +1,10 @@
+
 from collections import defaultdict
 import numpy as np
 import gensim, os
 from joblib import Parallel, delayed, load, dump
 from tqdm import tqdm
-# from .parallel import parallel_generate_walks
-from parallel import parallel_generate_walks
+from .parallel import parallel_generate_walks
 
 
 class Node2Vec:
