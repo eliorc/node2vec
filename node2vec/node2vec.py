@@ -1,9 +1,10 @@
 from collections import defaultdict
 import numpy as np
-import gensim, os, shutil, tempfile
+import gensim, os
 from joblib import Parallel, delayed, load, dump
 from tqdm import tqdm
-from .parallel import parallel_generate_walks
+# from .parallel import parallel_generate_walks
+from parallel import parallel_generate_walks
 
 
 class Node2Vec:
@@ -17,7 +18,7 @@ class Node2Vec:
     Q_KEY = 'q'
 
     def __init__(self, graph, dimensions=128, walk_length=80, num_walks=10, p=1, q=1, weight_key='weight',
-                 workers=1, sampling_strategy=None, quiet=False, tmp_dir=""):
+                 workers=1, sampling_strategy=None, quiet=False, temp_folder=None):
         """
         Initiates the Node2Vec object, precomputes walking probabilities and generates the walks.
         :param graph: Input graph
@@ -38,8 +39,8 @@ class Node2Vec:
         :type workers: int
         :param sampling_strategy: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization
-        :param tmp_dir: directory with enough space to hold the temp_d_graph
-        :type tmp_dir: str
+        :param temp_folder: folder with enough space to hold the memory map of self.d_graph (for bigger graphs); to be passed joblib.Parallel.temp_folder
+        :type temp_folder: str
         """
         self.graph = graph
         self.dimensions = dimensions
@@ -50,21 +51,18 @@ class Node2Vec:
         self.weight_key = weight_key
         self.workers = workers
         self.quiet = quiet
+        self.d_graph = defaultdict(dict)
 
         if sampling_strategy is None:
             self.sampling_strategy = {}
         else:
             self.sampling_strategy = sampling_strategy
 
-        self.d_graph = defaultdict(dict)
-        if tmp_dir != "":
-            assert os.path.isdir(tmp_dir), "tmp_dir does not exists"
-            self.temp_folder = tempfile.mkdtemp(dir=tmp_dir)
-            filename = os.path.join(self.temp_folder, "d_graph.json")
-            if os.path.exists(filename): os.unlink(filename)
-            dump(self.d_graph, filename)
-            self.d_graph = load(filename, mmap_mode="r+")
-            print("Memory map of d_graph: {}".format(filename))
+        self.temp_folder, self.require = None, None
+        if temp_folder:
+            assert os.path.isdir(temp_folder), "tmp_dir does not exists"
+            self.temp_folder = temp_folder
+            self.require = "sharedmem"
 
         self._precompute_probabilities()
         self.walks = self._generate_walks()
@@ -141,7 +139,7 @@ class Node2Vec:
         # Split num_walks for each worker
         num_walks_lists = np.array_split(range(self.num_walks), self.workers)
 
-        walk_results = Parallel(n_jobs=self.workers)(delayed(parallel_generate_walks)(self.d_graph,
+        walk_results = Parallel(n_jobs=self.workers, temp_folder = self.temp_folder, require = self.require)(delayed(parallel_generate_walks)(self.d_graph,
                                                                                       self.walk_length,
                                                                                       len(num_walks),
                                                                                       idx,
@@ -174,10 +172,3 @@ class Node2Vec:
             skip_gram_params['size'] = self.dimensions
 
         return gensim.models.Word2Vec(self.walks, **skip_gram_params)
-
-    def __del__(self):
-        if "temp_folder" in self.__dict__:
-            try:
-                shutil.rmtree(self.temp_folder)
-            except OSError:
-                print("Unable to clean the temporary folder!!!")
