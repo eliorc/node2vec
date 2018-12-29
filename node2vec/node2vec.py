@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
-import gensim
-from joblib import Parallel, delayed
+import gensim, os
+from joblib import Parallel, delayed, load, dump
 from tqdm import tqdm
 from .parallel import parallel_generate_walks
 
@@ -17,9 +17,10 @@ class Node2Vec:
     Q_KEY = 'q'
 
     def __init__(self, graph, dimensions=128, walk_length=80, num_walks=10, p=1, q=1, weight_key='weight',
-                 workers=1, sampling_strategy=None, quiet=False):
+                 workers=1, sampling_strategy=None, quiet=False, temp_folder=None):
         """
         Initiates the Node2Vec object, precomputes walking probabilities and generates the walks.
+
         :param graph: Input graph
         :type graph: Networkx Graph
         :param dimensions: Embedding dimensions (default: 128)
@@ -38,7 +39,10 @@ class Node2Vec:
         :type workers: int
         :param sampling_strategy: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization
+        :param temp_folder: Path to folder with enough space to hold the memory map of self.d_graph (for big graphs); to be passed joblib.Parallel.temp_folder
+        :type temp_folder: str
         """
+
         self.graph = graph
         self.dimensions = dimensions
         self.walk_length = walk_length
@@ -48,20 +52,30 @@ class Node2Vec:
         self.weight_key = weight_key
         self.workers = workers
         self.quiet = quiet
+        self.d_graph = defaultdict(dict)
 
         if sampling_strategy is None:
             self.sampling_strategy = {}
         else:
             self.sampling_strategy = sampling_strategy
 
-        self.d_graph = self._precompute_probabilities()
+        self.temp_folder, self.require = None, None
+        if temp_folder:
+            if not os.path.isdir(temp_folder):
+                raise NotADirectoryError("temp_folder does not exist or is not a directory. ({})".format(temp_folder))
+
+            self.temp_folder = temp_folder
+            self.require = "sharedmem"
+
+        self._precompute_probabilities()
         self.walks = self._generate_walks()
 
     def _precompute_probabilities(self):
         """
         Precomputes transition probabilities for each node.
         """
-        d_graph = defaultdict(dict)
+
+        d_graph = self.d_graph
         first_travel_done = set()
 
         nodes_generator = self.graph.nodes() if self.quiet \
@@ -117,8 +131,6 @@ class Node2Vec:
                 # Save neighbors
                 d_graph[current_node][self.NEIGHBORS_KEY] = d_neighbors
 
-        return d_graph
-
     def _generate_walks(self):
         """
         Generates the random walks which will be used as the skip-gram input.
@@ -130,19 +142,20 @@ class Node2Vec:
         # Split num_walks for each worker
         num_walks_lists = np.array_split(range(self.num_walks), self.workers)
 
-        walk_results = Parallel(n_jobs=self.workers)(delayed(parallel_generate_walks)(self.d_graph,
-                                                                                      self.walk_length,
-                                                                                      len(num_walks),
-                                                                                      idx,
-                                                                                      self.sampling_strategy,
-                                                                                      self.NUM_WALKS_KEY,
-                                                                                      self.WALK_LENGTH_KEY,
-                                                                                      self.NEIGHBORS_KEY,
-                                                                                      self.PROBABILITIES_KEY,
-                                                                                      self.FIRST_TRAVEL_KEY,
-                                                                                      self.quiet) for
-                                                     idx, num_walks
-                                                     in enumerate(num_walks_lists, 1))
+        walk_results = Parallel(n_jobs=self.workers, temp_folder=self.temp_folder, require=self.require)(
+            delayed(parallel_generate_walks)(self.d_graph,
+                                             self.walk_length,
+                                             len(num_walks),
+                                             idx,
+                                             self.sampling_strategy,
+                                             self.NUM_WALKS_KEY,
+                                             self.WALK_LENGTH_KEY,
+                                             self.NEIGHBORS_KEY,
+                                             self.PROBABILITIES_KEY,
+                                             self.FIRST_TRAVEL_KEY,
+                                             self.quiet) for
+            idx, num_walks
+            in enumerate(num_walks_lists, 1))
 
         walks = flatten(walk_results)
 

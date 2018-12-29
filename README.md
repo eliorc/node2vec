@@ -1,4 +1,4 @@
-# Node2Vec 
+# Node2Vec
 [![Downloads](http://pepy.tech/badge/node2vec)](http://pepy.tech/project/node2vec)
 
 Python3 implementation of the node2vec algorithm Aditya Grover, Jure Leskovec and Vid Kocijan.
@@ -6,10 +6,11 @@ Python3 implementation of the node2vec algorithm Aditya Grover, Jure Leskovec an
 
 ## Changes:
 
-New in `0.2.2`:
+New in `0.3.0`:
 
-Added edge embedding functionality. Module `node2vec.edges`.
-(Fixed error upon installation)
+Added support for big graphs which cannot be fit into memory during algorithm execution (causing OOM errors).
+
+Thanks  [`@pg2455`](https://github.com/pg2455) for the contribution of this feature.
 
 ## Installation
 
@@ -24,7 +25,7 @@ from node2vec import Node2Vec
 graph = nx.fast_gnp_random_graph(n=100, p=0.5)
 
 # Precompute probabilities and generate walks - **ON WINDOWS ONLY WORKS WITH workers=1**
-node2vec = Node2Vec(graph, dimensions=64, walk_length=30, num_walks=200, workers=4) 
+node2vec = Node2Vec(graph, dimensions=64, walk_length=30, num_walks=200, workers=4)  # Use temp_folder for big graphs
 
 # Embed nodes
 model = node2vec.fit(window=10, min_count=1, batch_words=4)  # Any keywords acceptable by gensim.Word2Vec can be passed, `diemnsions` and `workers` are automatically passed (from the Node2Vec constructor)
@@ -79,7 +80,8 @@ edges_kv.save_word2vec_format(EDGES_EMBEDDING_FILENAME)
     9. `sampling_strategy`: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization`
     10. `quiet`: Boolean controlling the verbosity. (default: False)
-    
+    11. `temp_folder`: String path pointing to folder to save a shared memory copy of the graph - Supply when working on graphs that are too big to fit in memory during algorithm execution.
+
 - `Node2Vec.fit` method:
     Accepts any key word argument acceptable by gensim.Word2Vec
 
@@ -106,6 +108,3 @@ Notice that edge embeddings are defined for any pair of nodes, connected or not 
 ## TODO
 - [x] Parallel implementation for walk generation
 - [ ] Parallel implementation for probability precomputation
-
-## Contributing
-I will probably not be maintaining this package actively, if someone wants to contribute and maintain, please contact me.
