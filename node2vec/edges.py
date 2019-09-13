@@ -8,27 +8,24 @@ from tqdm import tqdm
 
 class EdgeEmbedder(ABC):
 
-    def __init__(self, keyed_vectors, quiet=False):
+    def __init__(self, keyed_vectors: KeyedVectors, quiet: bool = False):
         """
         :param keyed_vectors: KeyedVectors containing nodes and embeddings to calculate edges for
-        :type keyed_vectors: gensim.models.KeyedVectors
         """
 
         self.kv = keyed_vectors
         self.quiet = quiet
 
     @abstractmethod
-    def _embed(self, edge):
+    def _embed(self, edge: tuple) -> np.ndarray:
         """
         Abstract method for implementing the embedding method
         :param edge: tuple of two nodes
-        :type edge: tuple
         :return: Edge embedding
-        :rtype: numpy.array
         """
         pass
 
-    def __getitem__(self, edge):
+    def __getitem__(self, edge) -> np.ndarray:
         if not isinstance(edge, tuple) or not len(edge) == 2:
             raise ValueError('edge must be a tuple of two nodes')
 
@@ -40,10 +37,10 @@ class EdgeEmbedder(ABC):
 
         return self._embed(edge)
 
-    def as_keyed_vectors(self):
+    def as_keyed_vectors(self) -> KeyedVectors:
         """
-        Generated a KeyedVectors instance with all
-        :return:
+        Generated a KeyedVectors instance with all the possible edge embeddings
+        :return: Edge embeddings
         """
 
         edge_generator = combinations_with_replacement(self.kv.index2word, r=2)
@@ -79,7 +76,7 @@ class AverageEmbedder(EdgeEmbedder):
     Average node features
     """
 
-    def _embed(self, edge):
+    def _embed(self, edge: tuple):
         return (self.kv[edge[0]] + self.kv[edge[1]]) / 2
 
 
@@ -88,7 +85,7 @@ class HadamardEmbedder(EdgeEmbedder):
     Hadamard product node features
     """
 
-    def _embed(self, edge):
+    def _embed(self, edge: tuple):
         return self.kv[edge[0]] * self.kv[edge[1]]
 
 
@@ -97,7 +94,7 @@ class WeightedL1Embedder(EdgeEmbedder):
     Weighted L1 node features
     """
 
-    def _embed(self, edge):
+    def _embed(self, edge: tuple):
         return np.abs(self.kv[edge[0]] - self.kv[edge[1]])
 
 
@@ -106,5 +103,5 @@ class WeightedL2Embedder(EdgeEmbedder):
     Weighted L2 node features
     """
 
-    def _embed(self, edge):
+    def _embed(self, edge: tuple):
         return (self.kv[edge[0]] - self.kv[edge[1]]) ** 2

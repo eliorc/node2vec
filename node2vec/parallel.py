@@ -2,17 +2,18 @@ import random
 import numpy as np
 from tqdm import tqdm
 
-def parallel_generate_walks(d_graph, global_walk_length, num_walks, cpu_num, sampling_strategy=None,
-                            num_walks_key=None, walk_length_key=None, neighbors_key=None, probabilities_key=None,
-                            first_travel_key=None, quiet=False):
+
+def parallel_generate_walks(d_graph: dict, global_walk_length: int, num_walks: int, cpu_num: int,
+                            sampling_strategy: dict = None, num_walks_key: str = None, walk_length_key: str = None,
+                            neighbors_key: str = None, probabilities_key: str = None, first_travel_key: str = None,
+                            quiet: bool = False) -> list:
     """
     Generates the random walks which will be used as the skip-gram input.
+
     :return: List of walks. Each walk is a list of nodes.
     """
 
     walks = list()
-
-
 
     if not quiet:
         pbar = tqdm(total=num_walks, desc='Generating walks (CPU: {})'.format(cpu_num))

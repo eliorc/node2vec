@@ -1,8 +1,12 @@
+import os
 from collections import defaultdict
+
 import numpy as np
-import gensim, os
-from joblib import Parallel, delayed, load, dump
+import networkx as nx
+import gensim
+from joblib import Parallel, delayed
 from tqdm import tqdm
+
 from .parallel import parallel_generate_walks
 
 
@@ -16,31 +20,23 @@ class Node2Vec:
     P_KEY = 'p'
     Q_KEY = 'q'
 
-    def __init__(self, graph, dimensions=128, walk_length=80, num_walks=10, p=1, q=1, weight_key='weight',
-                 workers=1, sampling_strategy=None, quiet=False, temp_folder=None):
+    def __init__(self, graph: nx.Graph, dimensions: int = 128, walk_length: int = 80, num_walks: int = 10, p: float = 1,
+                 q: float = 1, weight_key: str = 'weight', workers: int = 1, sampling_strategy: dict = None,
+                 quiet: bool = False, temp_folder: str = None):
         """
         Initiates the Node2Vec object, precomputes walking probabilities and generates the walks.
 
         :param graph: Input graph
-        :type graph: Networkx Graph
         :param dimensions: Embedding dimensions (default: 128)
-        :type dimensions: int
         :param walk_length: Number of nodes in each walk (default: 80)
-        :type walk_length: int
         :param num_walks: Number of walks per node (default: 10)
-        :type num_walks: int
         :param p: Return hyper parameter (default: 1)
-        :type p: float
         :param q: Inout parameter (default: 1)
-        :type q: float
         :param weight_key: On weighted graphs, this is the key for the weight attribute (default: 'weight')
-        :type weight_key: str
         :param workers: Number of workers for parallel execution (default: 1)
-        :type workers: int
         :param sampling_strategy: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization
         :param temp_folder: Path to folder with enough space to hold the memory map of self.d_graph (for big graphs); to be passed joblib.Parallel.temp_folder
-        :type temp_folder: str
         """
 
         self.graph = graph
@@ -131,7 +127,7 @@ class Node2Vec:
                 # Save neighbors
                 d_graph[current_node][self.NEIGHBORS_KEY] = d_neighbors
 
-    def _generate_walks(self):
+    def _generate_walks(self) -> list:
         """
         Generates the random walks which will be used as the skip-gram input.
         :return: List of walks. Each walk is a list of nodes.
@@ -161,7 +157,7 @@ class Node2Vec:
 
         return walks
 
-    def fit(self, **skip_gram_params):
+    def fit(self, **skip_gram_params) -> gensim.models.Word2Vec:
         """
         Creates the embeddings using gensim's Word2Vec.
         :param skip_gram_params: Parameteres for gensim.models.Word2Vec - do not supply 'size' it is taken from the Node2Vec 'dimensions' parameter
