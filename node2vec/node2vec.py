@@ -72,7 +72,6 @@ class Node2Vec:
         """
 
         d_graph = self.d_graph
-        first_travel_done = set()
 
         nodes_generator = self.graph.nodes() if self.quiet \
             else tqdm(self.graph.nodes(), desc='Computing transition probabilities')
@@ -90,7 +89,6 @@ class Node2Vec:
                     d_graph[current_node][self.PROBABILITIES_KEY] = dict()
 
                 unnormalized_weights = list()
-                first_travel_weights = list()
                 d_neighbors = list()
 
                 # Calculate unnormalized weights
@@ -110,8 +108,6 @@ class Node2Vec:
 
                     # Assign the unnormalized sampling strategy weight, normalize during random walk
                     unnormalized_weights.append(ss_weight)
-                    if current_node not in first_travel_done:
-                        first_travel_weights.append(self.graph[current_node][destination].get(self.weight_key, 1))
                     d_neighbors.append(destination)
 
                 # Normalize
@@ -119,13 +115,17 @@ class Node2Vec:
                 d_graph[current_node][self.PROBABILITIES_KEY][
                     source] = unnormalized_weights / unnormalized_weights.sum()
 
-                if current_node not in first_travel_done:
-                    unnormalized_weights = np.array(first_travel_weights)
-                    d_graph[current_node][self.FIRST_TRAVEL_KEY] = unnormalized_weights / unnormalized_weights.sum()
-                    first_travel_done.add(current_node)
-
                 # Save neighbors
                 d_graph[current_node][self.NEIGHBORS_KEY] = d_neighbors
+
+            # Calculate first_travel weights for source
+            first_travel_weights = []
+
+            for destination in self.graph.neighbors(source):
+                first_travel_weights.append(self.graph[source][destination].get(self.weight_key, 1))
+
+            first_travel_weights = np.array(first_travel_weights)
+            d_graph[source][self.FIRST_TRAVEL_KEY] = first_travel_weights / first_travel_weights.sum()
 
     def _generate_walks(self) -> list:
         """
