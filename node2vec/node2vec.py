@@ -1,3 +1,4 @@
+import random
 import os
 from collections import defaultdict
 
@@ -22,7 +23,7 @@ class Node2Vec:
 
     def __init__(self, graph: nx.Graph, dimensions: int = 128, walk_length: int = 80, num_walks: int = 10, p: float = 1,
                  q: float = 1, weight_key: str = 'weight', workers: int = 1, sampling_strategy: dict = None,
-                 quiet: bool = False, temp_folder: str = None):
+                 quiet: bool = False, temp_folder: str = None, seed: int = None):
         """
         Initiates the Node2Vec object, precomputes walking probabilities and generates the walks.
 
@@ -35,6 +36,7 @@ class Node2Vec:
         :param weight_key: On weighted graphs, this is the key for the weight attribute (default: 'weight')
         :param workers: Number of workers for parallel execution (default: 1)
         :param sampling_strategy: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
+        :param seed: Seed for the random number generator.
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization
         :param temp_folder: Path to folder with enough space to hold the memory map of self.d_graph (for big graphs); to be passed joblib.Parallel.temp_folder
         """
@@ -62,6 +64,10 @@ class Node2Vec:
 
             self.temp_folder = temp_folder
             self.require = "sharedmem"
+
+        if seed is not None:
+            random.seed(seed)
+            np.random.seed(seed)
 
         self._precompute_probabilities()
         self.walks = self._generate_walks()
