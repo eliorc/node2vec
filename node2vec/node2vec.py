@@ -115,9 +115,6 @@ class Node2Vec:
                 d_graph[current_node][self.PROBABILITIES_KEY][
                     source] = unnormalized_weights / unnormalized_weights.sum()
 
-                # Save neighbors
-                d_graph[current_node][self.NEIGHBORS_KEY] = d_neighbors
-
             # Calculate first_travel weights for source
             first_travel_weights = []
 
@@ -126,6 +123,9 @@ class Node2Vec:
 
             first_travel_weights = np.array(first_travel_weights)
             d_graph[source][self.FIRST_TRAVEL_KEY] = first_travel_weights / first_travel_weights.sum()
+
+            # Save neighbors
+            d_graph[source][self.NEIGHBORS_KEY] = list(self.graph.neighbors(source))
 
     def _generate_walks(self) -> list:
         """
