@@ -73,7 +73,7 @@ edges_kv.save_word2vec_format(EDGES_EMBEDDING_FILENAME)
         Use these keys exactly. If not set, will use the global ones which were passed on the object initialization`
     10. `quiet`: Boolean controlling the verbosity. (default: False)
     11. `temp_folder`: String path pointing to folder to save a shared memory copy of the graph - Supply when working on graphs that are too big to fit in memory during algorithm execution.
-    12. `seed`: Seed for the random number generator.
+    12. `seed`: Seed for the random number generator (default: None). Deterministic results can be obtained if seed is set and `workers=1`.
 
 - `Node2Vec.fit` method:
     Accepts any key word argument acceptable by gensim.Word2Vec
