@@ -6,7 +6,7 @@ import numpy as np
 import networkx as nx
 import gensim
 from joblib import Parallel, delayed
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from .parallel import parallel_generate_walks
 
