@@ -1,4 +1,4 @@
-from .node2vec import Node2Vec
 from . import edges
+from .node2vec import Node2Vec
 
-__version__ = '0.3.3'
+__version__ = '0.4.0'
