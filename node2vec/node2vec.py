@@ -139,7 +139,7 @@ class Node2Vec:
         :return: List of walks. Each walk is a list of nodes.
         """
 
-        def flatten(l): return [item for sublist in l for item in sublist]
+        flatten = lambda l: [item for sublist in l for item in sublist]
 
         # Split num_walks for each worker
         num_walks_lists = np.array_split(range(self.num_walks), self.workers)
