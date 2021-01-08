@@ -139,7 +139,7 @@ class Node2Vec:
         :return: List of walks. Each walk is a list of nodes.
         """
 
-        flatten = lambda l: [item for sublist in l for item in sublist]
+        def flatten(l): return [item for sublist in l for item in sublist]
 
         # Split num_walks for each worker
         num_walks_lists = np.array_split(range(self.num_walks), self.workers)
@@ -176,5 +176,8 @@ class Node2Vec:
 
         if 'size' not in skip_gram_params:
             skip_gram_params['size'] = self.dimensions
+
+        if 'sg' not in skip_gram_params:
+            skip_gram_params['sg'] = 1
 
         return gensim.models.Word2Vec(self.walks, **skip_gram_params)
