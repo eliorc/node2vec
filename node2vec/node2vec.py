@@ -177,4 +177,7 @@ class Node2Vec:
         if 'size' not in skip_gram_params:
             skip_gram_params['size'] = self.dimensions
 
+        if 'sg' not in skip_gram_params:
+            skip_gram_params['sg'] = 1
+
         return gensim.models.Word2Vec(self.walks, **skip_gram_params)
