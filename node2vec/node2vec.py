@@ -174,7 +174,7 @@ class Node2Vec:
         if 'workers' not in skip_gram_params:
             skip_gram_params['workers'] = self.workers
 
-        if 'size' not in skip_gram_params:
+        if 'vector_size' not in skip_gram_params:
             skip_gram_params['vector_size'] = self.dimensions
 
         if 'sg' not in skip_gram_params:
