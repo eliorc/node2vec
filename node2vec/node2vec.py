@@ -5,6 +5,7 @@ from collections import defaultdict
 import numpy as np
 import networkx as nx
 import gensim
+import pkg_resources
 from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
@@ -170,12 +171,13 @@ class Node2Vec:
         :type skip_gram_params: dict
         :return: A gensim word2vec model
         """
+        size = 'size' if pkg_resources.get_distribution("gensim").version < '4.0.0' else size = 'vector_size'
 
         if 'workers' not in skip_gram_params:
             skip_gram_params['workers'] = self.workers
 
         if 'size' not in skip_gram_params:
-            skip_gram_params['size'] = self.dimensions
+            skip_gram_params[size] = self.dimensions
 
         if 'sg' not in skip_gram_params:
             skip_gram_params['sg'] = 1
