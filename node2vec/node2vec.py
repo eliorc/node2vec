@@ -171,7 +171,8 @@ class Node2Vec:
         :type skip_gram_params: dict
         :return: A gensim word2vec model
         """
-        size = 'size' if pkg_resources.get_distribution("gensim").version < '4.0.0' else size = 'vector_size'
+        gensim_version = pkg_resources.get_distribution("gensim").version
+        size = 'size' if gensim_version < '4.0.0' else 'vector_size'
 
         if 'workers' not in skip_gram_params:
             skip_gram_params['workers'] = self.workers
