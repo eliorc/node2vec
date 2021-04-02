@@ -1,10 +1,10 @@
-import random
 import os
+import random
 from collections import defaultdict
 
-import numpy as np
-import networkx as nx
 import gensim
+import networkx as nx
+import numpy as np
 import pkg_resources
 from joblib import Parallel, delayed
 from tqdm.auto import tqdm
@@ -167,7 +167,8 @@ class Node2Vec:
     def fit(self, **skip_gram_params) -> gensim.models.Word2Vec:
         """
         Creates the embeddings using gensim's Word2Vec.
-        :param skip_gram_params: Parameteres for gensim.models.Word2Vec - do not supply 'size' it is taken from the Node2Vec 'dimensions' parameter
+        :param skip_gram_params: Parameters for gensim.models.Word2Vec - do not supply 'size' / 'vector_size' it is
+            taken from the Node2Vec 'dimensions' parameter
         :type skip_gram_params: dict
         :return: A gensim word2vec model
         """
