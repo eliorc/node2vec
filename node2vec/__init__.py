@@ -1,4 +1,5 @@
 from . import edges
 from .node2vec import Node2Vec
+from importlib import metadata
 
-__version__ = '0.4.3'
+__version__ = metadata.version('node2vec')
