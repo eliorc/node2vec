@@ -1,5 +1,4 @@
 import random
-import numpy as np
 from tqdm import tqdm
 
 
@@ -57,10 +56,10 @@ def parallel_generate_walks(d_graph: dict, global_walk_length: int, num_walks: i
 
                 if len(walk) == 1:  # For the first step
                     probabilities = d_graph[walk[-1]][first_travel_key]
-                    walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
+                    walk_to = random.choices(walk_options, weights=probabilities)[0]
                 else:
                     probabilities = d_graph[walk[-1]][probabilities_key][walk[-2]]
-                    walk_to = np.random.choice(walk_options, size=1, p=probabilities)[0]
+                    walk_to = random.choices(walk_options, weights=probabilities)[0]
 
                 walk.append(walk_to)
 
