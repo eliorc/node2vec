@@ -106,12 +106,23 @@ class Node2Vec:
                     q = self.sampling_strategy[current_node].get(self.Q_KEY,
                                                                  self.q) if current_node in self.sampling_strategy else self.q
 
+                    try:
+                        if self.graph[current_node][destination].get(self.weight_key):
+                            weight = self.graph[current_node][destination].get(self.weight_key)
+                        else: 
+                            ## Example : AtlasView({0: {'type': 1, 'weight':0.1}})- when we have edge weight
+                            edge = list(self.graph[current_node][destination])[-1]
+                            weight = self.graph[current_node][destination][edge].get(self.weight_key)
+                            
+                    except:
+                        weight = 1 
+                    
                     if destination == source:  # Backwards probability
-                        ss_weight = self.graph[current_node][destination].get(self.weight_key, 1) * 1 / p
+                        ss_weight = weight * 1 / p
                     elif destination in self.graph[source]:  # If the neighbor is connected to the source
-                        ss_weight = self.graph[current_node][destination].get(self.weight_key, 1)
+                        ss_weight = weight
                     else:
-                        ss_weight = self.graph[current_node][destination].get(self.weight_key, 1) * 1 / q
+                        ss_weight = weight * 1 / q
 
                     # Assign the unnormalized sampling strategy weight, normalize during random walk
                     unnormalized_weights.append(ss_weight)
