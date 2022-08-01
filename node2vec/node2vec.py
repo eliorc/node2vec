@@ -108,11 +108,11 @@ class Node2Vec:
 
                     try:
                         if self.graph[current_node][destination].get(self.weight_key):
-                            weight = self.graph[current_node][destination].get(self.weight_key)
+                            weight = self.graph[current_node][destination].get(self.weight_key, 1)
                         else: 
                             ## Example : AtlasView({0: {'type': 1, 'weight':0.1}})- when we have edge weight
                             edge = list(self.graph[current_node][destination])[-1]
-                            weight = self.graph[current_node][destination][edge].get(self.weight_key)
+                            weight = self.graph[current_node][destination][edge].get(self.weight_key, 1)
                             
                     except:
                         weight = 1 
