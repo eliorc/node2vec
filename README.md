@@ -70,7 +70,7 @@ edges_kv.save_word2vec_format(EDGES_EMBEDDING_FILENAME)
     3. `walk_length`: Number of nodes in each walk (default: 80)
     4. `num_walks`: Number of walks per node (default: 10)
     5. `p`: Return hyper parameter (default: 1)
-    6. `q`: Input parameter (default: 1)
+    6. `q`: Inout parameter (default: 1)
     7. `weight_key`: On weighted graphs, this is the key for the weight attribute (default: 'weight')
     8. `workers`: Number of workers for parallel execution (default: 1)
     9. `sampling_strategy`: Node specific sampling strategies, supports setting node specific 'q', 'p', 'num_walks' and 'walk_length'.
