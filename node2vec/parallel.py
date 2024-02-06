@@ -1,8 +1,10 @@
 import random
 from tqdm import tqdm
 
+import numpy as np
 
-def parallel_generate_walks(d_graph: dict, global_walk_length: int, num_walks: int, cpu_num: int,
+
+def parallel_generate_walks(d_graph: dict, global_walk_length: int, num_walks: int, cpu_num: int, column_key: str,
                             sampling_strategy: dict = None, num_walks_key: str = None, walk_length_key: str = None,
                             neighbors_key: str = None, probabilities_key: str = None, first_travel_key: str = None,
                             quiet: bool = False) -> list:
@@ -35,9 +37,13 @@ def parallel_generate_walks(d_graph: dict, global_walk_length: int, num_walks: i
                     num_walks_key in sampling_strategy[source] and \
                     sampling_strategy[source][num_walks_key] <= n_walk:
                 continue
-
+                
+            if column_key not in d_graph[source]:
+                continue
+                
             # Start walk
             walk = [source]
+            walk_columns = [d_graph[source][column_key]]
 
             # Calculate walk length
             if source in sampling_strategy:
@@ -53,15 +59,24 @@ def parallel_generate_walks(d_graph: dict, global_walk_length: int, num_walks: i
                 # Skip dead end nodes
                 if not walk_options:
                     break
-
+                
+                del_idx = []
+                for i in range(len(walk_options)):
+                    if d_graph[walk_options[i]][column_key] in walk_columns:
+                        del_idx.append(i)
+                walk_options = [x for x in walk_options if d_graph[x][column_key] not in walk_columns]
+        
                 if len(walk) == 1:  # For the first step
-                    probabilities = d_graph[walk[-1]][first_travel_key]
-                    walk_to = random.choices(walk_options, weights=probabilities)[0]
+                    if len(walk_options) > 0:
+                        probabilities = d_graph[walk[-1]][first_travel_key]
+                        probabilities = np.delete(probabilities, del_idx)
+                        walk_to = random.choices(walk_options, weights=probabilities)[0]
                 else:
                     probabilities = d_graph[walk[-1]][probabilities_key][walk[-2]]
                     walk_to = random.choices(walk_options, weights=probabilities)[0]
 
                 walk.append(walk_to)
+                walk.append(d_graph[walk_to][column_key])
 
             walk = list(map(str, walk))  # Convert all to strings
 

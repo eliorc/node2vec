@@ -9,10 +9,12 @@ import pkg_resources
 from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
-from .parallel import parallel_generate_walks
+# from .parallel import parallel_generate_walks
+from parallel import parallel_generate_walks
 
 
 class Node2Vec:
+    COLUMN_KEY = 'column'
     FIRST_TRAVEL_KEY = 'first_travel_key'
     PROBABILITIES_KEY = 'probabilities'
     NEIGHBORS_KEY = 'neighbors'
@@ -144,6 +146,9 @@ class Node2Vec:
 
             # Save neighbors
             d_graph[source][self.NEIGHBORS_KEY] = list(self.graph.neighbors(source))
+            
+            # Save column
+            d_graph[source][self.COLUMN_KEY] = self.graph.nodes()[source][self.COLUMN_KEY]
 
     def _generate_walks(self) -> list:
         """
@@ -161,6 +166,7 @@ class Node2Vec:
                                              self.walk_length,
                                              len(num_walks),
                                              idx,
+                                             self.COLUMN_KEY,
                                              self.sampling_strategy,
                                              self.NUM_WALKS_KEY,
                                              self.WALK_LENGTH_KEY,
