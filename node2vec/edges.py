@@ -7,8 +7,6 @@ from check_gensim import is_dated_gensim_version
 from gensim.models import KeyedVectors
 from tqdm import tqdm
 
-
-
 class EdgeEmbedder(ABC):
     INDEX_MAPPING_KEY = 'index2word' if is_dated_gensim_version() else 'index_to_key'
 
