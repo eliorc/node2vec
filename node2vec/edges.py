@@ -3,13 +3,15 @@ from functools import reduce
 from itertools import combinations_with_replacement
 
 import numpy as np
-import pkg_resources
+from importlib.metadata import version
 from gensim.models import KeyedVectors
 from tqdm import tqdm
 
+def is_dated_gensim_version():
+    return version("gensim") < '4.0.0'
 
 class EdgeEmbedder(ABC):
-    INDEX_MAPPING_KEY = 'index2word' if pkg_resources.get_distribution("gensim").version < '4.0.0' else 'index_to_key'
+    INDEX_MAPPING_KEY = 'index2word' if is_dated_gensim_version() else 'index_to_key'
 
     def __init__(self, keyed_vectors: KeyedVectors, quiet: bool = False):
         """
@@ -67,7 +69,7 @@ class EdgeEmbedder(ABC):
 
         # Build KV instance
         edge_kv = KeyedVectors(vector_size=self.kv.vector_size)
-        if pkg_resources.get_distribution("gensim").version < '4.0.0':
+        if is_dated_gensim_version():
             edge_kv.add(
                 entities=tokens,
                 weights=features)
