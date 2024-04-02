@@ -3,7 +3,7 @@ from functools import reduce
 from itertools import combinations_with_replacement
 
 import numpy as np
-from check_gensim import is_dated_gensim_version
+from .check_gensim import is_dated_gensim_version
 from gensim.models import KeyedVectors
 from tqdm import tqdm
 
