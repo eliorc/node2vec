@@ -5,7 +5,7 @@ from collections import defaultdict
 import gensim
 import networkx as nx
 import numpy as np
-from check_gensim import is_dated_gensim_version
+from .check_gensim import is_dated_gensim_version
 from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
