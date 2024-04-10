@@ -137,11 +137,9 @@ class Node2Vec:
             first_travel_weights = []
 
             for destination in self.graph.neighbors(source):
-                # print(source, destination, self.graph[source][destination]["weight"])
                 first_travel_weights.append(self.graph[source][destination].get(self.weight_key, 1))
 
             first_travel_weights = np.array(first_travel_weights)
-            # print(first_travel_weights)
             d_graph[source][self.FIRST_TRAVEL_KEY] = first_travel_weights / first_travel_weights.sum()
 
             # Save neighbors
