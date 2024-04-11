@@ -5,7 +5,7 @@ from collections import defaultdict
 import gensim
 import networkx as nx
 import numpy as np
-import pkg_resources
+from .check_gensim import is_dated_gensim_version
 from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
@@ -188,8 +188,7 @@ class Node2Vec:
             skip_gram_params['workers'] = self.workers
 
         # Figure out gensim version, naming of output dimensions changed from size to vector_size in v4.0.0
-        gensim_version = pkg_resources.get_distribution("gensim").version
-        size = 'size' if gensim_version < '4.0.0' else 'vector_size'
+        size = 'size' if is_dated_gensim_version() else 'vector_size'
         if size not in skip_gram_params:
             skip_gram_params[size] = self.dimensions
 
