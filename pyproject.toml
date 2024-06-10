@@ -7,13 +7,12 @@ repository = "https://github.com/eliorc/node2vec"
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-networkx = "^3.3"
+python = "^3.8"
+networkx = "^2.5"
 gensim = "^4.1.2"
 numpy = "^1.19.5"
 tqdm = "^4.55.1"
 joblib = "^1.1.0"
-scipy = "1.12"
 
 [tool.poetry.dev-dependencies]
 
