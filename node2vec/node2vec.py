@@ -128,7 +128,14 @@ class Node2Vec:
         """
         Precomputes transition probabilities for each node.
         """
-        pass
+        nodes = list(self.graph.nodes())
+        if not self.quiet:
+            nodes = tqdm(nodes, desc='Computing transition probabilities')
+
+        with ThreadPoolExecutor(max_workers=self.workers) as executor:
+            futures = [executor.submit(self._compute_node_probabilities, source) for source in nodes]
+            for future in as_completed(futures):
+                future.result()
 
     def _generate_walks(self) -> list:
         """
