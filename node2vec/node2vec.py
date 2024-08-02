@@ -9,8 +9,9 @@ from .check_gensim import is_dated_gensim_version
 from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
-from .parallel import parallel_generate_walks
+from .parallel import parallel_generate_walks,NodeTransitionProbabilities
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 class Node2Vec:
     FIRST_TRAVEL_KEY = 'first_travel_key'
@@ -73,77 +74,11 @@ class Node2Vec:
         self._precompute_probabilities()
         self.walks = self._generate_walks()
 
-    def _precompute_probabilities(self):
-        """
-        Precomputes transition probabilities for each node.
-        """
-
-        d_graph = self.d_graph
-
-        nodes_generator = self.graph.nodes() if self.quiet \
-            else tqdm(self.graph.nodes(), desc='Computing transition probabilities')
-
-        for source in nodes_generator:
-
-            # Init probabilities dict for first travel
-            if self.PROBABILITIES_KEY not in d_graph[source]:
-                d_graph[source][self.PROBABILITIES_KEY] = dict()
-
-            for current_node in self.graph.neighbors(source):
-
-                # Init probabilities dict
-                if self.PROBABILITIES_KEY not in d_graph[current_node]:
-                    d_graph[current_node][self.PROBABILITIES_KEY] = dict()
-
-                unnormalized_weights = list()
-                d_neighbors = list()
-
-                # Calculate unnormalized weights
-                for destination in self.graph.neighbors(current_node):
-
-                    p = self.sampling_strategy[current_node].get(self.P_KEY,
-                                                                 self.p) if current_node in self.sampling_strategy else self.p
-                    q = self.sampling_strategy[current_node].get(self.Q_KEY,
-                                                                 self.q) if current_node in self.sampling_strategy else self.q
-
-                    try:
-                        if self.graph[current_node][destination].get(self.weight_key):
-                            weight = self.graph[current_node][destination].get(self.weight_key, 1)
-                        else: 
-                            ## Example : AtlasView({0: {'type': 1, 'weight':0.1}})- when we have edge weight
-                            edge = list(self.graph[current_node][destination])[-1]
-                            weight = self.graph[current_node][destination][edge].get(self.weight_key, 1)
-                            
-                    except:
-                        weight = 1 
-                    
-                    if destination == source:  # Backwards probability
-                        ss_weight = weight * 1 / p
-                    elif destination in self.graph[source]:  # If the neighbor is connected to the source
-                        ss_weight = weight
-                    else:
-                        ss_weight = weight * 1 / q
-
-                    # Assign the unnormalized sampling strategy weight, normalize during random walk
-                    unnormalized_weights.append(ss_weight)
-                    d_neighbors.append(destination)
-
-                # Normalize
-                unnormalized_weights = np.array(unnormalized_weights)
-                d_graph[current_node][self.PROBABILITIES_KEY][
-                    source] = unnormalized_weights / unnormalized_weights.sum()
-
-            # Calculate first_travel weights for source
-            first_travel_weights = []
-
-            for destination in self.graph.neighbors(source):
-                first_travel_weights.append(self.graph[source][destination].get(self.weight_key, 1))
-
-            first_travel_weights = np.array(first_travel_weights)
-            d_graph[source][self.FIRST_TRAVEL_KEY] = first_travel_weights / first_travel_weights.sum()
-
-            # Save neighbors
-            d_graph[source][self.NEIGHBORS_KEY] = list(self.graph.neighbors(source))
+        
+        def _precompute_probabilities(self):
+        precompute_probabilities = NodeTransitionProbabilities(self.graph,self.sampling_strategy,self.p,self.q,self.weight_key,self.PROBABILITIES_KEY,self.FIRST_TRAVEL_KEY,self.NEIGHBORS_KEY)
+        precompute_probabilities.compute_probabilities_parallel(quiet=self.quiet,n_workers=self.workers)
+        self.d_graph = precompute_probabilities.d_graph
 
     def _generate_walks(self) -> list:
         """
